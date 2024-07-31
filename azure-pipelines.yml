@@ -1,0 +1,51 @@
+# Nombre del pipeline
+name: 0.$(Date:yyMMdd)$(Rev:.r)  # Trying to set '$(Build.BuildNumber)'
+
+
+# Variables definidas para el pipeline (ajusta estos valores según tu configuración)
+variables:
+#---v EDITABLE-----------------------------------------------------------------------------------------------   
+  - name: MY_SONAR_KEY
+    value: feb-config-server
+  - name: COMPONENT_NAME
+    value: feb-config-server
+#---^ EDITABLE-----------------------------------------------------------------------------------------------    
+  - name: system.debug
+    value: 'true'
+  - name: JAVA_HOME_17_X64
+    value: /usr/lib/jvm/java-17-openjdk-amd64
+  - name: MAVEN
+    value: /opt/maven
+  - name: MAVEN_CACHE_FOLDER
+    value: $(Pipeline.Workspace)/.m2/repository
+  - name: MAVEN_OPTS 
+    value: '-Xmx1024m -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'  
+resources:
+  repositories:
+  - repository: pipeline-template
+    type: git
+    name: pipeline-template
+    ref: main
+  - repository: self
+trigger: 
+  branches:
+    include: 
+    - development
+# Definición del pool de agentes a utilizar (ejemplo usando Ubuntu)
+pool: Default
+steps:
+  - checkout: self
+    fetchDepth: 0
+    #path: $(Build.SourcesDirectory)
+  - checkout: pipeline-template
+  - template:
+     java-springboot-steps-poc.yml@pipeline-template
+    parameters:
+      mySonarKey: $(MY_SONAR_KEY)
+      componentName: $(COMPONENT_NAME)
+      pomPath: $(Build.Repository.Name)
+      javaPath: $(JAVA_HOME_17_X64)
+      mavenPath: $(MAVEN)
+      mavenCachePath: $(MAVEN_CACHE_FOLDER)
+      mavenOpts: $(MAVEN_OPTS)
+      targetPath: 'target'
